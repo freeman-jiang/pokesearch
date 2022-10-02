@@ -1,86 +1,79 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
+import type { NextPage } from "next";
+import Head from "next/head";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import PokeAPI from "pokeapi-typescript";
 
-const Home: NextPage = () => {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
-    </div>
-  )
+interface Inputs {
+  name: string;
 }
 
-export default Home
+const Home: NextPage = () => {
+  const { register, handleSubmit, watch } = useForm<Inputs>({
+    defaultValues: { name: "" },
+  });
+  const pokemonName = watch("name");
+
+  const getPokemonByName = async () => {
+    return PokeAPI.Pokemon.resolve(pokemonName);
+  };
+
+  const { data: pokemon, refetch } = useQuery([pokemonName], getPokemonByName, {
+    enabled: false,
+  });
+
+  const onSubmit: SubmitHandler<Inputs> = async ({ name }) => {
+    refetch();
+  };
+
+  console.log(pokemon);
+
+  return (
+    <>
+      <Head>
+        <title>Pokésearch</title>
+      </Head>
+      <div className="flex w-full justify-center items-center min-h-screen">
+        <div className="text-center w-full max-w-sm px-4">
+          <h1 className="font-bold text-4xl">Pokésearch</h1>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <input
+              {...register("name")}
+              className="w-full mt-3 rounded-xl px-5 py-3 transition-all placeholder:text-neutral-500 border-2 border-neutral-200 focus:border-sky-500 outline-none"
+              placeholder="Search for any Pokémon in the universe"
+            />
+          </form>
+          {pokemon && (
+            <div className="max-w-sm rounded-xl mt-4 overflow-hidden shadow-lg p-8">
+              <img
+                className="w-full"
+                src={pokemon.sprites.front_default}
+                alt="Sunset in the mountains"
+              />
+              <div>
+                <div className="font-bold text-xl mb-2 capitalize">
+                  {pokemon.name}
+                </div>
+                <p className="text-gray-700 text-base capitalize">
+                  <span className="font-bold">Abilities: </span>
+                  {pokemon.abilities
+                    .map((ability) => ability.ability.name)
+                    .join(", ")}
+                </p>
+              </div>
+              <div className="mt-2">
+                {pokemon.types.map(({ type: { name } }) => (
+                  <span className="inline-block bg-pink-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Home;
