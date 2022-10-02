@@ -26,8 +26,6 @@ const Home: NextPage = () => {
     refetch();
   };
 
-  console.log(pokemon);
-
   return (
     <>
       <Head>
